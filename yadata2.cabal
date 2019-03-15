@@ -1,0 +1,39 @@
+name:                yadata2
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/githubuser/yadata2#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2019 Author name here
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+executable yadata2
+  hs-source-dirs:     src
+                    , src/Yadata2
+  other-modules:      Yadata2.LibAPI
+                    , Yadata2.LibYahoo                     
+  main-is:            Main.hs
+  default-language:   Haskell2010
+  build-depends:      base >= 4.7 && < 5
+                    , time
+                    , csv
+                    , vector
+                    , wreq
+                    , http-client
+                    , http-client-tls
+                    , lens
+                    , time
+                    , regex-pcre-builtin
+                    , bytestring
+                    , utf8-string
+                    , Chart
+                    , Chart-cairo
+                    , colour
+                    , xts101
+
