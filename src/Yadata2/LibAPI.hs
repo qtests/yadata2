@@ -3,7 +3,9 @@
 
 module Yadata2.LibAPI
 (
-       downloadH2File
+       viewTL       
+    ,  downloadH2File
+    ,  downloadH2Graph
     ,  priceTimeSeriesWithDate
     ,  plotXTS
     ,  combineXTSnTS
@@ -99,9 +101,7 @@ priceTSWithSource source ticker startDate
                             return $ transformData dates "%Y-%m-%d"( sequenceA [closep, adjclosep, volume] )
 
    | otherwise         =    return $ Left "priceTSWithSource: Unknown source!"
--- ------------------------------------------
--- API
----------------------------------------------
+
 
 createTSEither :: (Eq a, Num a) => Either String [(UTCTime, a)]  -> TS a
 createTSEither ts = TS abtimes abvalues
@@ -116,6 +116,14 @@ createTSEither ts = TS abtimes abvalues
                     ab = alignBackFillForwardTS (V.filter isAWorkingDay index) ts1
                 in V.unzip ab
 
+                
+myLine :: String -> [[(x,y)]] -> Colour Double -> EC l (PlotLines x y)
+myLine title values col = liftEC $ do
+    let color = opaque col -- <- takeColor
+    plot_lines_title .= title
+    plot_lines_values .= values
+    plot_lines_style . line_color .= color
+
 
 downDataExt :: [String] -> [String] -> XTS Double -> IO (XTS Double, [String])
 downDataExt [] tf accum = return (accum, tf)
@@ -128,11 +136,14 @@ downDataExt (tk:rest) tkFailed accum = do
     let tkf = if (isLeft ts || (fmap length ts) == Right 0)
                     then [tk]
                     else []
-
+    
     let allD = combineXTSnTS accum tk (createTSEither ts)
     if (rest == []) then return (allD, tkFailed ++ tkf)
                     else downDataExt rest (tkFailed ++ tkf) allD
 
+-- ------------------------------------------
+-- API
+---------------------------------------------
 
 downloadH2File :: [String] -> IO ()
 downloadH2File tickers = do
@@ -141,26 +152,33 @@ downloadH2File tickers = do
     (xts, tks) <- if (length tks > 0)
                         then downDataExt tks [] xts
                         else return (xts, tks)
+   
     -- print $ takeRowXTS 2 xts
-    -- print tks
     writeFileXTS "testFile_hd.csv" xts
-    writeFile "testFile_hd_errors.csv" $ show tks
+    writeFile    "testFile_hd_errors.csv" $ show tks
     return ()
 
+
+downloadH2Graph :: [String] -> IO ()
+downloadH2Graph tickers = do
+    print tickers
+    (xts, tks) <- downDataExt tickers [] (createXTSRaw V.empty V.empty V.empty)
+    (xts, tks) <- if (length tks > 0)
+                        then downDataExt tks [] xts
+                        else return (xts, tks)
+   
+    -- print $ takeRowXTS 2 xts
+    writeFileXTS "testFile_hd.csv" xts
+    writeFile    "testFile_hd_errors.csv"  $ show tks
+    plotXTS      "testFile_strat_plot.png" $ xts
+    return ()
+
+
 -- downloadH2File ["IBM", "MSFT", "AAPL", "KO" ]
-
-myLine :: String -> [[(x,y)]] -> Colour Double -> EC l (PlotLines x y)
-myLine title values col = liftEC $ do
-    let color = opaque col -- <- takeColor
-    plot_lines_title .= title
-    plot_lines_values .= values
-    plot_lines_style . line_color .= color
-
 
 
 plotXTS :: (Num a, PlotValue a)=> String -> XTS a -> IO ()
 plotXTS plotFileName (XTS xindex xdata xcolNames) = do
-    undefined
     let colourNames = cycle [blue,green,red, black, turquoise, teal, magenta, orange, brown, pink, violet]
     let xin = fmap (utcToLocalTime utc) xindex
     let prepData = fmap (\x-> V.zip xin x ) xdata
@@ -168,6 +186,14 @@ plotXTS plotFileName (XTS xindex xdata xcolNames) = do
       forM_ (V.zip3 xcolNames prepData (V.fromList colourNames)) $ \(cname, dta, cl) -> do
             plot (myLine cname [ V.toList dta ] cl)
     return ()
+
+
+viewTL :: [String] -> IO ()
+viewTL [fileName] = do
+    contents <- readFile fileName
+    let tickers = lines contents
+        numberedTasks = zipWith (\n linex -> show n ++ " - " ++ linex) [0..] tickers
+    putStr $ unlines numberedTasks
 
 
 {- -- | FilePath was testFile_strat_plot.svg
