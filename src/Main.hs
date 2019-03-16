@@ -21,10 +21,10 @@ dispatch =  [ ("view",     viewTL),
 --    stack exec yadata2 view sp500.csv | more
 
 -- To download historical time series and make a graph for the company IBM:
---    stack exec yadata-exe graph IBM
+--    stack exec yadata2 graph IBM MSFT
 
 -- To download historical time series and save them to a file for the companies IBM, MSFT, AAPL and KO:
---    stack exec yadata-exe download IBM MSFT AAPL KO
+--    stack exec yadata2 download IBM MSFT AAPL KO
 
 
 
